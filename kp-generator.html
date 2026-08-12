@@ -1020,6 +1020,7 @@ function buildConfig() {
     comments:       document.getElementById('comments').value.trim(),
     compiler_name:  document.getElementById('compiler_name').value.trim(),
     compiler_date:  dateToRu(document.getElementById('compiler_date').value),
+    extra_parts:    document.getElementById('extra-parts').value.trim(),
   };
 }
 
@@ -1121,6 +1122,13 @@ function buildDocDef(config) {
         },
         margin:[0,0,0,10],
       },
+      ...(config.extra_parts ? [{
+        stack:[
+          {text:'Доп. запчасти:', bold:true, fontSize:10, color:DB, margin:[0,0,0,4]},
+          {text:config.extra_parts, fontSize:10, color:'#333333'},
+        ],
+        margin:[0,0,0,12],
+      }] : []),
       ...(config.comments ? [{
         stack:[
           {text:'Комментарии:', bold:true, fontSize:10, color:DB, margin:[0,0,0,4]},
