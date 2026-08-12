@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Лист отгрузки · Кашалот</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<style>
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+:root {
+  --navy:   #0F2740;
+  --teal:   #1A8C8C;
+  --teal2:  #16a3a3;
+  --amber:  #C8852A;
+  --ink:    #11202E;
+  --muted:  #6B7D8C;
+  --bg:     #F0F4F8;
+  --card:   #FFFFFF;
+  --line:   #DDE5EE;
+  --red:    #C0392B;
+  --green:  #1E8449;
+  --shadow: 0 1px 3px rgba(15,39,64,.06), 0 4px 12px rgba(15,39,64,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --navy:  #9FC6E0;
+    --ink:   #DCE8F2;
+    --muted: #8A9DAD;
+    --bg:    #0D1620;
+    --card:  #152230;
+    --line:  #1F3347;
+    --shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.2);
+  }
+}
+:root[data-theme="dark"] {
+  --navy:  #9FC6E0;
+  --ink:   #DCE8F2;
+  --muted: #8A9DAD;
+  --bg:    #0D1620;
+  --card:  #152230;
+  --line:  #1F3347;
+  --shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.2);
+}
+:root[data-theme="light"] {
+  --navy:   #0F2740;
+  --teal:   #1A8C8C;
+  --ink:    #11202E;
+  --muted:  #6B7D8C;
+  --bg:     #F0F4F8;
+  --card:   #FFFFFF;
+  --line:   #DDE5EE;
+  --shadow: 0 1px 3px rgba(15,39,64,.06), 0 4px 12px rgba(15,39,64,.04);
+}
+
+/* ── Reset & base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+.wrap {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 36px 20px 80px;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+.page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--teal);
+  text-decoration: none;
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+.page-back:hover { text-decoration: underline; }
+.page-title { font-size: 26px; font-weight: 700; color: var(--navy); margin-bottom: 4px; text-wrap: balance; }
+.page-sub   { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+section {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+section h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+/* ── Grid helpers ────────────────────────────────────────────────────────── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.fields-row { display: flex; flex-direction: column; gap: 14px; max-width: 320px; }
+
+/* ── Form elements ───────────────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 5px; }
+label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--teal); outline: none; }
+textarea { resize: vertical; font-family: inherit; font-size: 15px; }
+.field-error input, .field-error select {
+  border-color: var(--red) !important;
+  background: rgba(192,57,43,.05) !important;
+}
+
+/* ── Catalog ─────────────────────────────────────────────────────────────── */
+.cat-group { margin-bottom: 20px; }
+.cat-group:last-child { margin-bottom: 0; }
+.cat-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+}
+.cat-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 8px;
+}
+.cat-card {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--bg);
+  transition: border-color .15s, box-shadow .15s;
+}
+.cat-card:hover { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(26,140,140,.08); }
+.cat-name { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.cat-sub  { font-size: 12px; color: var(--muted); }
+.cat-hint { font-size: 12px; color: var(--teal); font-style: italic; margin-top: 2px; }
+.cat-add  {
+  margin-top: 6px;
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: filter .15s;
+}
+.cat-add:hover { filter: brightness(1.08); }
+
+/* ── Опции снегоката ─────────────────────────────────────────────────────── */
+.sneg-opts { display: flex; flex-direction: column; gap: 7px; margin-top: 6px; }
+.sneg-opt-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 3px;
+  letter-spacing: .02em;
+}
+.opt-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.opt-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.opt-btn.active {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+.opt-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.opt-select:focus { border-color: var(--teal); }
+
+/* ── Delivery table ──────────────────────────────────────────────────────── */
+.col-headers {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 60px auto;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+.col-headers label { margin: 0; }
+.item-row {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 60px auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.item-total {
+  padding: 9px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.rm-btn {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 12px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  transition: border-color .15s, color .15s;
+}
+.rm-btn:hover { border-color: var(--red); color: var(--red); }
+.add-btn {
+  background: none;
+  border: 1px dashed var(--teal);
+  border-radius: 9px;
+  padding: 9px 16px;
+  cursor: pointer;
+  color: var(--teal);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+  transition: background .15s;
+}
+.add-btn:hover { background: rgba(26,140,140,.07); }
+.empty-order {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 24px 0;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+/* ── Totals ──────────────────────────────────────────────────────────────── */
+.totals-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 20px;
+  align-items: center;
+}
+.tot-label { font-size: 13px; color: var(--muted); }
+.tot-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tot-value.disc  { color: var(--green); }
+.tot-value.minus { color: var(--red); }
+.divider { height: 1px; background: var(--line); margin: 10px 0; grid-column: 1/-1; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.btn-primary {
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 26px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .15s;
+}
+.btn-primary:hover { filter: brightness(1.07); }
+.btn-sec {
+  background: transparent;
+  color: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.btn-sec:hover { border-color: var(--teal); color: var(--teal); }
+.btn-tg {
+  background: #229ED9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .15s;
+}
+.btn-tg:hover { filter: brightness(1.1); }
+.btn-tg:disabled { opacity: .6; cursor: default; }
+
+.btn-sheets {
+  background: #1a7a3a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, filter .15s;
+}
+.btn-sheets:hover { filter: brightness(1.1); }
+.btn-sheets:disabled { opacity: .6; cursor: default; transition: background .5s; }
+
+/* ── Error banner ────────────────────────────────────────────────────────── */
+.error-banner {
+  display: none;
+  background: rgba(192,57,43,.08);
+  border: 1px solid rgba(192,57,43,.35);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  color: var(--red);
+  font-size: 13px;
+}
+.error-banner.show { display: block; }
+.error-banner ul   { margin: 6px 0 0 16px; }
+.error-banner ul li { margin-bottom: 3px; }
+
+/* ── Preview strip ───────────────────────────────────────────────────────── */
+.preview-strip {
+  background: var(--navy);
+  color: #fff;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ps-label { color: rgba(255,255,255,.5); font-size: 11px; margin-bottom: 2px; }
+.ps-val   { font-weight: 600; }
+.cmd-block      { display: none; }
+.cmd-block.show { display: block; }
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--green);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+.toast.show { opacity: 1; }
+
+/* ── Nav tabs ────────────────────────────────────────────────────────────── */
+.nav-tabs{display:flex;gap:4px;margin-bottom:28px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;width:fit-content}
+.nav-tab{padding:8px 22px;border-radius:9px;font-size:14px;font-weight:600;text-decoration:none;color:var(--muted);transition:background .15s,color .15s}
+.nav-tab:hover{color:var(--navy)}
+.nav-tab.active{background:var(--teal);color:#fff}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 620px) {
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .col-headers   { display: none; }
+  .item-row      { grid-template-columns: 1fr 1fr; }
+  .cat-items     { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="page-back" href="#">← Все проекты</a>
+
+  <nav class="nav-tabs">
+    <a class="nav-tab active" href="kp-generator.html">📦 Лист отгрузки</a>
+    <a class="nav-tab" href="zapchasti.html">🔧 Лист запчастей</a>
+  </nav>
+
+  <h1 class="page-title">Лист отгрузки</h1>
+  <p class="page-sub">Лист отгрузки для партнёров АО «Кашалот Шеринг»</p>
+
+  <!-- ── Основные данные ────────────────────────────────────────────────── -->
+  <section>
+    <h2>Основные данные</h2>
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="field">
+        <label>Партнёр (ИП / компания)</label>
+        <input id="partner" placeholder="ИП Богатищев Н.Н.">
+      </div>
+      <div class="field">
+        <label>Город / Локация</label>
+        <input id="location" placeholder="Москва, пляж Серебряный бор">
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="field">
+        <label>Потребная дата отправки</label>
+        <input id="date" type="date">
+      </div>
+      <div class="field">
+        <label style="white-space:nowrap">Телефон / Ник в Telegram получателя</label>
+        <input id="contact_name" placeholder="+7 900 000 00 00 / @ivan" oninput="formatPhone(this)">
+      </div>
+      <div class="field">
+        <label>Способ отправки</label>
+        <input id="shipping" placeholder="Самовывоз, логистическая компания, Паша, наши водители">
+      </div>
+      <div class="field">
+        <label>Доставка за счёт</label>
+        <select id="delivery_payer">
+          <option value="Партнёра">Партнёра</option>
+          <option value="АО КШ">АО КШ</option>
+          <option value="АО РиП">АО РиП</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Тип партнера</label>
+        <select id="deal_type">
+          <option value="Покупка">Покупка</option>
+          <option value="Аренда">Аренда</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Каталог позиций (без цен) ─────────────────────────────────────── -->
+  <section>
+    <h2>Каталог позиций</h2>
+
+    <div class="cat-group">
+      <div class="cat-title">Снегокаты</div>
+      <div class="cat-items">
+        <div class="cat-card">
+          <div class="cat-name">Кашалот региональный</div>
+          <div class="cat-sub">б/у</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Каток</div>
+              <select class="opt-select sneg-katok">
+                <option>Хард</option>
+                <option>Софт</option>
+                <option>Гладкая резина</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Цвет</div>
+              <select class="opt-select sneg-color">
+                <option value=""></option>
+                <option>Голубой</option>
+                <option>Бирюзовый</option>
+                <option>Салатовый</option>
+                <option>Фиолетовый</option>
+                <option>Жёлтый</option>
+                <option>Красный</option>
+                <option>Белый</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Модуль</div>
+              <select class="opt-select sneg-module">
+                <option>Зимний</option>
+                <option>Летний</option>
+                <option>Пляжный</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Резина</div>
+              <select class="opt-select sneg-rubber">
+                <option>положить хард резину</option>
+                <option>положить софт резину</option>
+                <option>положить гладкую резину</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addSneg(this,'Кашалот региональный','б/у')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Кашалот восстановленный</div>
+          <div class="cat-sub">как новый 2026</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Каток</div>
+              <select class="opt-select sneg-katok">
+                <option>Хард</option>
+                <option>Софт</option>
+                <option>Гладкая резина</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Цвет</div>
+              <select class="opt-select sneg-color">
+                <option value=""></option>
+                <option>Голубой</option>
+                <option>Бирюзовый</option>
+                <option>Салатовый</option>
+                <option>Фиолетовый</option>
+                <option>Жёлтый</option>
+                <option>Красный</option>
+                <option>Белый</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Модуль</div>
+              <select class="opt-select sneg-module">
+                <option>Зимний</option>
+                <option>Летний</option>
+                <option>Пляжный</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Резина</div>
+              <select class="opt-select sneg-rubber">
+                <option>положить хард резину</option>
+                <option>положить софт резину</option>
+                <option>положить гладкую резину</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addSneg(this,'Кашалот восстановленный','как новый 2026')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Кашалот 2026</div>
+          <div class="cat-sub">новый 2026</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Каток</div>
+              <select class="opt-select sneg-katok">
+                <option>Хард</option>
+                <option>Софт</option>
+                <option>Гладкая резина</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Цвет</div>
+              <select class="opt-select sneg-color">
+                <option value=""></option>
+                <option>Голубой</option>
+                <option>Бирюзовый</option>
+                <option>Салатовый</option>
+                <option>Фиолетовый</option>
+                <option>Жёлтый</option>
+                <option>Красный</option>
+                <option>Белый</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Модуль</div>
+              <select class="opt-select sneg-module">
+                <option>Зимний</option>
+                <option>Летний</option>
+                <option>Пляжный</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Резина</div>
+              <select class="opt-select sneg-rubber">
+                <option>положить хард резину</option>
+                <option>положить софт резину</option>
+                <option>положить гладкую резину</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addSneg(this,'Кашалот 2026','новый 2026')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Кашалот NEW</div>
+          <div class="cat-sub">новый 2027</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Каток</div>
+              <select class="opt-select sneg-katok">
+                <option>Хард</option>
+                <option>Софт</option>
+                <option>Гладкая резина</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Цвет</div>
+              <select class="opt-select sneg-color">
+                <option value=""></option>
+                <option>Голубой</option>
+                <option>Бирюзовый</option>
+                <option>Салатовый</option>
+                <option>Фиолетовый</option>
+                <option>Жёлтый</option>
+                <option>Красный</option>
+                <option>Белый</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Модуль</div>
+              <select class="opt-select sneg-module">
+                <option>Зимний</option>
+                <option>Летний</option>
+                <option>Пляжный</option>
+              </select>
+            </div>
+            <div>
+              <div class="sneg-opt-label">Резина</div>
+              <select class="opt-select sneg-rubber">
+                <option>положить хард резину</option>
+                <option>положить софт резину</option>
+                <option>положить гладкую резину</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addSneg(this,'Кашалот NEW','новый 2027')">+ В состав</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title">Зарядки (ЗУ)</div>
+      <div class="cat-items">
+        <div class="cat-card">
+          <div class="cat-name">Общее количество ЗУ</div>
+          <div class="cat-sub">зарядное устройство</div>
+          <button class="cat-add" onclick="addFromCatalog('Общее количество ЗУ','ЗУ')">+ В состав</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title">Аккумуляторы (АКБ)</div>
+      <div class="cat-items">
+        <div class="cat-card">
+          <div class="cat-name">АКБ</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Состояние</div>
+              <select class="opt-select" id="akb-state">
+                <option value="б/у">б/у</option>
+                <option value="как новый (до 50 циклов)">как новый (до 50 циклов)</option>
+                <option value="новый 2026 (0 циклов)">новый 2026 (0 циклов)</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addAkb(this)">+ В состав</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title">Модули</div>
+      <div class="cat-items">
+        <div class="cat-card">
+          <div class="cat-name">Пляжный летний модуль</div>
+          <div class="cat-sub">модули</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Цвет</div>
+              <select class="opt-select sneg-color">
+                <option value=""></option>
+                <option>Голубой</option>
+                <option>Бирюзовый</option>
+                <option>Салатовый</option>
+                <option>Фиолетовый</option>
+                <option>Жёлтый</option>
+                <option>Красный</option>
+                <option>Белый</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addModule(this,'Пляжный летний модуль','модули')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Летний модуль</div>
+          <div class="cat-sub">модули</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Цвет</div>
+              <select class="opt-select sneg-color">
+                <option value=""></option>
+                <option>Голубой</option>
+                <option>Бирюзовый</option>
+                <option>Салатовый</option>
+                <option>Фиолетовый</option>
+                <option>Жёлтый</option>
+                <option>Красный</option>
+                <option>Белый</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addModule(this,'Летний модуль','модули')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Зимний модуль</div>
+          <div class="cat-sub">модули</div>
+          <div class="sneg-opts">
+            <div>
+              <div class="sneg-opt-label">Цвет</div>
+              <select class="opt-select sneg-color">
+                <option value=""></option>
+                <option>Голубой</option>
+                <option>Бирюзовый</option>
+                <option>Салатовый</option>
+                <option>Фиолетовый</option>
+                <option>Жёлтый</option>
+                <option>Красный</option>
+                <option>Белый</option>
+              </select>
+            </div>
+          </div>
+          <button class="cat-add" onclick="addModule(this,'Зимний модуль','модули')">+ В состав</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title">Запчасти</div>
+      <div class="cat-items">
+        <div class="cat-card">
+          <div class="cat-name">Паспорт</div>
+          <button class="cat-add" onclick="addFromCatalog('Паспорт','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Рук-во по эксплуатации</div>
+          <button class="cat-add" onclick="addFromCatalog('Рук-во по эксплуатации','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Сервисный комплект инструмента</div>
+          <div class="cat-sub">ключи, отвёртки, отмычка новая, ключ-магнит трекера</div>
+          <button class="cat-add" onclick="addFromCatalog('Сервисный комплект инструмента','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Вольтметр</div>
+          <button class="cat-add" onclick="addFromCatalog('Вольтметр','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Распорка лыжи</div>
+          <button class="cat-add" onclick="addFromCatalog('Распорка лыжи','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Ключ катка 2 шт</div>
+          <button class="cat-add" onclick="addFromCatalog('Ключ катка 2 шт','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Съёмный грипс</div>
+          <button class="cat-add" onclick="addFromCatalog('Съёмный грипс','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">ЗИП набор</div>
+          <button class="cat-add" onclick="addFromCatalog('ЗИП набор','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Малый набор запчастей</div>
+          <button class="cat-add" onclick="addFromCatalog('Малый набор запчастей','запчасти')">+ В состав</button>
+        </div>
+        <div class="cat-card">
+          <div class="cat-name">Большой набор запчастей</div>
+          <button class="cat-add" onclick="addFromCatalog('Большой набор запчастей','запчасти')">+ В состав</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-group">
+      <div class="cat-title">Доп. запчасти</div>
+      <textarea id="extra-parts" rows="4" placeholder="Фара 2 шт.&#10;Руль 1 шт.&#10;..." style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--card);color:var(--ink);resize:vertical"></textarea>
+    </div>
+  </section>
+
+  <!-- ── Комментарии ──────────────────────────────────────────────────────── -->
+  <section>
+    <h2>Комментарии</h2>
+    <div class="field">
+      <textarea id="comments" rows="4" placeholder="Важные детали, пожелания, примечания..."></textarea>
+    </div>
+  </section>
+
+  <!-- ── Состав поставки ───────────────────────────────────────────────── -->
+  <section>
+    <h2>Состав поставки</h2>
+    <div class="col-headers">
+      <label>Позиция</label>
+      <label>Категория</label>
+      <label>Кол-во</label>
+      <span></span>
+    </div>
+    <div id="items-list">
+      <div class="empty-order" id="empty-hint">Добавьте позиции из каталога выше или вручную ↓</div>
+    </div>
+    <button class="add-btn" onclick="addItem()">+ Добавить позицию вручную</button>
+  </section>
+
+  <!-- ── Составитель ──────────────────────────────────────────────────── -->
+  <section>
+    <h2>Составитель</h2>
+    <div class="fields-row">
+      <div class="field">
+        <label>Фамилия Имя</label>
+        <input id="compiler_name" placeholder="Иванова Мария">
+      </div>
+      <div class="field">
+        <label>Дата составления</label>
+        <input id="compiler_date" type="date">
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Генерация ─────────────────────────────────────────────────────── -->
+  <section>
+    <h2>Сгенерировать</h2>
+    <div class="actions">
+      <button class="btn-primary" onclick="generatePDF()">Скачать PDF</button>
+      <button class="btn-tg" onclick="sendToTelegram()">Отправить в чат</button>
+      <button class="btn-sec" onclick="document.getElementById('load-pdf-input').click()">Загрузить лист отгрузки</button>
+      <input type="file" id="load-pdf-input" accept=".pdf" style="display:none"
+             onchange="loadFromPDF(this.files[0]);this.value=''">
+      <button class="btn-sheets" id="btn-sheets" onclick="saveToSheets()">📊 Сохранить в таблицу</button>
+    </div>
+    <div class="error-banner" id="error-banner">
+      <strong>Заполни обязательные поля перед генерацией:</strong>
+      <ul id="error-list"></ul>
+    </div>
+    <div class="cmd-block" id="cmd-block">
+      <div class="preview-strip" id="preview-strip"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast">Скопировано ✓</div>
+
+<script>
+const MONTHS = ['Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_DATE = [3,4,5,6,7,8,9,10,11];
+const MONTHS_FULL_GEN = ['января','февраля','марта','апреля','мая','июня',
+                         'июля','августа','сентября','октября','ноября','декабря'];
+
+let itemId = 0;
+
+window.onload = function() {
+  const now = new Date();
+  document.getElementById('date').value = now.toISOString().slice(0,10);
+};
+
+function toggleOpt(btn) {
+  btn.closest('.opt-toggle').querySelectorAll('.opt-btn')
+     .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function addModule(btn, name, cat) {
+  const color = btn.closest('.cat-card').querySelector('.sneg-color')?.value || '';
+  addFromCatalog(`${name} (${color})`, cat);
+}
+
+function addSneg(btn, name, cat) {
+  const card   = btn.closest('.cat-card');
+  const katok  = card.querySelector('.sneg-katok')?.value || '';
+  const color  = card.querySelector('.sneg-color')?.value || '';
+  const module = card.querySelector('.sneg-module')?.value || '';
+  const rubber = card.querySelector('.sneg-rubber')?.value || 'Нет';
+  const parts  = [
+    katok  ? katok + ' каток' : '',
+    color  || '',
+    module ? module + ' модуль' : '',
+    rubber === 'Да' ? 'гладкая резина' : '',
+  ].filter(Boolean).join(', ');
+  addFromCatalog(`${name} (${parts})`, cat);
+}
+
+function addAkb(btn) {
+  const state = document.getElementById('akb-state').value;
+  addFromCatalog(`АКБ (${state})`, 'акб');
+}
+
+function addCustomPart() {
+  const input = document.getElementById('custom-part-name');
+  const name  = input.value.trim();
+  if (!name) { input.focus(); return; }
+  addFromCatalog(name, 'доп. запчасти');
+  input.value = '';
+  input.focus();
+}
+
+function addFromCatalog(name, cat) {
+  hideEmpty();
+  const iid = ++itemId;
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.id = `item-${iid}`;
+  div.innerHTML = `
+    <input value="${escHtml(name)}" class="iname">
+    <input value="${escHtml(cat)}" class="icat">
+    <input type="number" value="1" min="1" class="iqty">
+    <button class="rm-btn" onclick="removeItem(${iid})">✕</button>
+  `;
+  document.getElementById('items-list').appendChild(div);
+  div.querySelector('.iqty').focus();
+  div.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function addItem() {
+  hideEmpty();
+  const iid = ++itemId;
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.id = `item-${iid}`;
+  div.innerHTML = `
+    <input placeholder="Название позиции" class="iname">
+    <input placeholder="категория" class="icat">
+    <input type="number" value="1" min="1" class="iqty">
+    <button class="rm-btn" onclick="removeItem(${iid})">✕</button>
+  `;
+  document.getElementById('items-list').appendChild(div);
+}
+
+function hideEmpty() {
+  const h = document.getElementById('empty-hint');
+  if (h) h.remove();
+}
+
+function removeItem(id) {
+  const el = document.getElementById(`item-${id}`);
+  if (el) el.remove();
+  if (!document.querySelectorAll('#items-list .item-row').length) {
+    const d = document.createElement('div');
+    d.className = 'empty-order'; d.id = 'empty-hint';
+    d.textContent = 'Добавьте позиции из каталога выше или вручную ↓';
+    document.getElementById('items-list').appendChild(d);
+  }
+}
+
+function formatPhone(input) {
+  let v = input.value;
+  if (v.startsWith('@') || v === '') return;
+  let digits = v.replace(/\D/g, '');
+  if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+  if (digits.startsWith('7')) {
+    const d = digits.slice(1);
+    let result = '+7';
+    if (d.length > 0) result += ' ' + d.slice(0,3);
+    if (d.length > 3) result += ' ' + d.slice(3,6);
+    if (d.length > 6) result += ' ' + d.slice(6,8);
+    if (d.length > 8) result += ' ' + d.slice(8,10);
+    input.value = result;
+  }
+}
+
+function escHtml(s)  { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function dateToRu(val) {
+  if (!val) return '';
+  const [y,m,d] = val.split('-');
+  return `${parseInt(d)} ${MONTHS_FULL_GEN[parseInt(m)-1]} ${y}`;
+}
+function partnerSlug(p) { return p.replace(/[^а-яёА-ЯЁa-zA-Z0-9]/g,'_').replace(/_+/g,'_'); }
+
+function buildConfig() {
+  const rows = document.querySelectorAll('#items-list .item-row');
+  const items = Array.from(rows).map(row => ({
+    name:     row.querySelector('.iname').value.trim(),
+    category: row.querySelector('.icat').value.trim(),
+    qty:      parseFloat(row.querySelector('.iqty').value) || 0,
+  }));
+  return {
+    partner:        document.getElementById('partner').value.trim(),
+    location:       document.getElementById('location').value.trim(),
+    contact_name:   document.getElementById('contact_name').value.trim(),
+    shipping:       document.getElementById('shipping').value.trim(),
+    delivery_payer: document.getElementById('delivery_payer').value,
+    deal_type:      document.getElementById('deal_type').value,
+    date:           dateToRu(document.getElementById('date').value),
+    items,
+    comments:       document.getElementById('comments').value.trim(),
+    compiler_name:  document.getElementById('compiler_name').value.trim(),
+    compiler_date:  dateToRu(document.getElementById('compiler_date').value),
+  };
+}
+
+function validate(config) {
+  const errors = [];
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+
+  const required = {
+    partner:       ['partner',       'Имя партнёра (ИП / компания)'],
+    compiler_name: ['compiler_name', 'Фамилия Имя составителя'],
+  };
+  for (const [key,[id,label]] of Object.entries(required)) {
+    if (!config[key]) {
+      errors.push(label);
+      document.getElementById(id)?.closest('.field')?.classList.add('field-error');
+    }
+  }
+  if (!config.items || config.items.length === 0) {
+    errors.push('Добавь хотя бы одну позицию в состав поставки');
+  }
+
+  const banner = document.getElementById('error-banner');
+  const list   = document.getElementById('error-list');
+  if (errors.length) {
+    list.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+    banner.classList.add('show');
+    banner.scrollIntoView({behavior:'smooth', block:'nearest'});
+    return false;
+  }
+  banner.classList.remove('show');
+  return true;
+}
+
+function buildDocDef(config) {
+  const DB = '#1F4E79', MB = '#2E86C1', PB = '#EBF5FB';
+  const GL = '#BDC3C7', GT = '#666666', WH = '#FFFFFF';
+  const F4 = '#F4F9FD';
+
+  const itemRows = [
+    [
+      {text:'№',        bold:true, fontSize:9, color:WH, alignment:'center'},
+      {text:'Позиция',  bold:true, fontSize:9, color:WH, alignment:'center'},
+      {text:'Категория',bold:true, fontSize:9, color:WH, alignment:'center'},
+      {text:'Кол-во',   bold:true, fontSize:9, color:WH, alignment:'center'},
+    ],
+    ...config.items.map((it,i) => [
+      {text:String(i+1),          alignment:'center'},
+      {text:it.name, bold:true},
+      {text:it.category,          alignment:'center'},
+      {text:String(it.qty),       alignment:'center'},
+    ])
+  ];
+
+  const dd = {
+    pageSize: 'A4',
+    pageMargins: [42, 34, 42, 42],
+    defaultStyle: {font:'Roboto', fontSize:10},
+    info: {
+      author:  'АО Кашалот Шеринг',
+      subject: 'KP_CFG_V1:' + btoa(unescape(encodeURIComponent(JSON.stringify(config)))),
+    },
+    content: [
+      {
+        table:{widths:['25%','*','25%'],body:[[
+          {text:'КАШАЛОТ', color:WH, bold:true, fontSize:13},
+          {text:'ЛИСТ ОТГРУЗКИ', color:WH, bold:true, fontSize:22, alignment:'center'},
+          {stack:[{text:'Дата отправки:', color:'#AED6F1', fontSize:9},{text:config.date||'—', color:WH, bold:true, fontSize:11}], alignment:'right'},
+        ]]},
+        layout:{fillColor:()=>DB,hLineWidth:()=>0,vLineWidth:()=>0,
+          paddingLeft:()=>8,paddingRight:()=>8,paddingTop:()=>10,paddingBottom:()=>10},
+        margin:[0,0,0,12],
+      },
+      {
+        table:{widths:['*','*','*'],body:[
+          [
+            {text:[{text:'Партнёр: ',bold:true}, config.partner]},
+            {text:[{text:'Город / Локация: ',bold:true}, config.location||'—']},
+            {text:[{text:'Тип сделки: ',bold:true}, config.deal_type||'—']},
+          ],
+          [
+            {text:[{text:'Телефон / TG: ',bold:true}, config.contact_name||'—']},
+            {text:[{text:'Способ отправки: ',bold:true}, config.shipping||'—']},
+            {text:[{text:'Доставка за счёт: ',bold:true}, config.delivery_payer||'—']},
+          ],
+        ]},
+        layout:{fillColor:()=>PB,
+          hLineWidth:(i)=>i===0?2:0,vLineWidth:()=>0,hLineColor:()=>MB,
+          paddingLeft:()=>8,paddingRight:()=>8,paddingTop:()=>7,paddingBottom:()=>7},
+        margin:[0,0,0,12],
+      },
+      {text:'Состав поставки', fontSize:14, bold:true, color:DB, margin:[0,0,0,8]},
+      {
+        table:{headerRows:1, widths:[27,'*',102,48], body:itemRows},
+        layout:{
+          fillColor:(r)=>r===0?DB:r%2===1?F4:WH,
+          hLineWidth:(i)=>i===1?1.5:0.4, vLineWidth:()=>0.4,
+          hLineColor:(i)=>i===1?MB:GL,   vLineColor:()=>GL,
+          paddingLeft:()=>5, paddingRight:()=>5, paddingTop:()=>6, paddingBottom:()=>6,
+        },
+        margin:[0,0,0,10],
+      },
+      ...(config.comments ? [{
+        stack:[
+          {text:'Комментарии:', bold:true, fontSize:10, color:DB, margin:[0,0,0,4]},
+          {text:config.comments, fontSize:10, color:'#333333'},
+        ],
+        margin:[0,0,0,12],
+      }] : []),
+      {
+        table:{widths:['*',155],body:[[
+          {text:'Составитель:', bold:true,fontSize:10,color:DB,alignment:'right'},
+          {stack:[{text:config.compiler_name||'—', fontSize:10, color:DB, bold:true},{text:config.compiler_date||'', fontSize:10, color:DB}], alignment:'center'},
+        ]]},
+        layout:{fillColor:()=>PB,
+          hLineWidth:(i)=>i===0?1:0,vLineWidth:()=>0,hLineColor:()=>MB,
+          paddingLeft:()=>8,paddingRight:()=>8,paddingTop:()=>7,paddingBottom:()=>7},
+        margin:[0,0,0,20],
+      },
+    ],
+  };
+  return dd;
+}
+
+function generatePDF() {
+  const config = buildConfig();
+  if (!validate(config)) return;
+  const dd = buildDocDef(config);
+  const slug = partnerSlug(config.partner||'Партнёр');
+  pdfMake.createPdf(dd).download(`Лист_отгрузки_${slug}_Кашалот.pdf`);
+
+  document.getElementById('preview-strip').innerHTML = `
+    <div><div class="ps-label">Партнёр</div><div class="ps-val">${config.partner||'—'}</div></div>
+    <div><div class="ps-label">Составитель</div><div class="ps-val">${config.compiler_name||'—'}</div></div>
+  `;
+  document.getElementById('cmd-block').classList.add('show');
+}
+
+function loadFromPDF(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.readAsArrayBuffer(file);
+  reader.onload = function(e) {
+    const bytes = new Uint8Array(e.target.result);
+    let text = '';
+    for (let i = 0; i < bytes.length; i++) text += String.fromCharCode(bytes[i]);
+
+    const marker = 'KP_CFG_V1:';
+    const idx = text.indexOf(marker);
+    if (idx === -1) { alert('Файл не содержит данных КП.'); return; }
+    const start = idx + marker.length;
+    let end = start;
+    while (end < text.length && text[end] !== ')' && text[end] !== '\n' && text[end] !== '\r') end++;
+    const b64 = text.slice(start, end).replace(/\s/g,'');
+    try {
+      const config = JSON.parse(decodeURIComponent(escape(atob(b64))));
+      populateForm(config);
+    } catch(err) {
+      alert('Ошибка чтения КП из PDF: ' + err.message);
+    }
+  };
+}
+
+function populateForm(config) {
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+  document.getElementById('error-banner').classList.remove('show');
+  document.getElementById('cmd-block').classList.remove('show');
+
+  document.getElementById('partner').value      = config.partner      || '';
+  document.getElementById('location').value     = config.location     || '';
+  document.getElementById('contact_name').value = config.contact_name || '';
+  document.getElementById('shipping').value     = config.shipping     || '';
+  if (config.delivery_payer) document.getElementById('delivery_payer').value = config.delivery_payer;
+  if (config.deal_type) document.getElementById('deal_type').value = config.deal_type;
+  document.getElementById('comments').value      = config.comments      || '';
+  document.getElementById('compiler_name').value = config.compiler_name || '';
+  if (config.compiler_date) {
+    const months = {'января':'01','февраля':'02','марта':'03','апреля':'04','мая':'05','июня':'06','июля':'07','августа':'08','сентября':'09','октября':'10','ноября':'11','декабря':'12'};
+    const p = config.compiler_date.split(' ');
+    if (p.length === 3) document.getElementById('compiler_date').value = `${p[2]}-${months[p[1]]||'01'}-${p[0].padStart(2,'0')}`;
+  }
+
+  if (config.date) {
+    const parts = config.date.split(' ');
+    if (parts.length === 3) {
+      const day = parts[0].padStart(2,'0');
+      const mi  = MONTHS_FULL_GEN.indexOf(parts[1]);
+      if (mi !== -1) {
+        const mon = (mi+1).toString().padStart(2,'0');
+        document.getElementById('date').value = `${parts[2]}-${mon}-${day}`;
+      }
+    }
+  }
+  const list = document.getElementById('items-list');
+  list.innerHTML = '';
+  itemId = 0;
+  if (config.items && config.items.length > 0) {
+    config.items.forEach(item => {
+      const iid = ++itemId;
+      const div = document.createElement('div');
+      div.className = 'item-row';
+      div.id = `item-${iid}`;
+      div.innerHTML = `
+        <input value="${escHtml(item.name)}" class="iname">
+        <input value="${escHtml(item.category)}" class="icat">
+        <input type="number" value="${item.qty}" min="1" class="iqty">
+        <button class="rm-btn" onclick="removeItem(${iid})">✕</button>
+      `;
+      list.appendChild(div);
+    });
+  } else {
+    const d = document.createElement('div');
+    d.className = 'empty-order'; d.id = 'empty-hint';
+    d.textContent = 'Добавьте позиции из каталога выше или вручную ↓';
+    list.appendChild(d);
+  }
+
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── Открыть договор с предзаполнением ────────────────────────────────────
+function openDogovor() {
+  const partner  = document.getElementById('partner').value.trim();
+  const location = document.getElementById('location').value.trim();
+  const contact  = document.getElementById('contact_name').value.trim();
+  const date     = document.getElementById('date').value;
+  const dealType = document.getElementById('deal_type').value;
+  const rows     = document.querySelectorAll('#items-list .item-row');
+  const summary  = Array.from(rows).map(r => {
+    const name = r.querySelector('.iname').value.trim();
+    const qty  = r.querySelector('.iqty').value;
+    return qty > 1 ? `${qty} × ${name}` : name;
+  }).filter(Boolean).slice(0,3).join(', ');
+
+  const params = new URLSearchParams();
+  if (partner)  params.set('partner',  partner);
+  if (location) params.set('location', location);
+  if (contact)  params.set('contact',  contact);
+  if (date)     params.set('ship_date', date);
+  if (summary)  params.set('summary',  summary);
+  if (dealType) params.set('deal_type', dealType);
+
+  window.open('dogovora.html?' + params.toString(), '_blank');
+}
+
+// ── Подпись для Telegram ──────────────────────────────────────────────────
+function buildCaption(config) {
+  const items = config.items || [];
+  const snegs     = items.filter(it => it.name.startsWith('Кашалот'));
+  const akbItems  = items.filter(it => it.name.startsWith('АКБ'));
+  const zuItems   = items.filter(it => it.category === 'ЗУ');
+  const hasZap    = items.some(it => it.category === 'запчасти' || it.category === 'доп. запчасти');
+  const hasMod    = items.some(it => it.category === 'модули');
+
+  const snegTypes = [
+    { key: 'региональный', label: 'Кашалот региональный б/у' },
+    { key: 'восстановленный', label: 'Кашалот восстановленный' },
+    { key: '2026',         label: 'Кашалот новый 2026' },
+    { key: 'NEW',          label: 'Кашалот NEW 2027' },
+  ];
+  const akbTotal = akbItems.reduce((s, it) => s + it.qty, 0);
+  const zuTotal  = zuItems.reduce((s, it) => s + it.qty, 0);
+
+  const snegsTotal = snegs.reduce((s, it) => s + it.qty, 0);
+
+  const lines = ['📦 Лист отгрузки', ''];
+  lines.push(`Партнёр: ${config.partner}`);
+  if (config.location) lines.push(`Город: ${config.location}`);
+  if (config.date)     lines.push(`Дата отправки: ${config.date}`);
+  lines.push('');
+
+  if (snegsTotal > 0) {
+    lines.push(`Всего кашалотов: ${snegsTotal}`);
+    const modLabel = {'Зимний':'на зимнем модуле','Летний':'на летнем модуле','Пляжный':'на пляжном модуле'};
+    const getSnegLabel = it => {
+      const t = snegTypes.find(({key}) => it.name.includes(key));
+      return t ? t.label : it.name.replace(/\s*\(.*\)/,'').trim();
+    };
+    const getModule = it => Object.keys(modLabel).find(k => it.name.includes(k + ' модуль')) || '';
+    const uniqueMods = [...new Set(snegs.map(getModule))];
+    if (uniqueMods.length === 1 && uniqueMods[0]) {
+      lines.push(`На ${modLabel[uniqueMods[0]].replace('на ','')}`);
+      lines.push('');
+      snegTypes.forEach(({key, label}) => {
+        const total = snegs.filter(it => it.name.includes(key)).reduce((s, it) => s + it.qty, 0);
+        if (total > 0) lines.push(`${label}: ${total}`);
+      });
+    } else {
+      lines.push('');
+      snegs.forEach(it => {
+        const mod = getModule(it);
+        lines.push(`${getSnegLabel(it)}: ${it.qty}${mod ? ' ' + modLabel[mod] : ''}`);
+      });
+    }
+    lines.push('');
+  }
+
+  if (akbTotal > 0) lines.push(`АКБ: ${akbTotal}`);
+  if (zuTotal  > 0) lines.push(`ЗУ: ${zuTotal}`);
+  lines.push('');
+  lines.push(hasZap ? '+запчасти' : 'нет запчастей');
+  lines.push(hasMod ? '+модули'   : 'нет модулей');
+
+  return lines.join('\n');
+}
+
+// ── Сохранить в Google Таблицу ────────────────────────────────────────────
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz6YuKvZG11pJMITLFwjWEhU2VWbdfrR4519qbh5ivHw4ihNyTEzzA4MD9ISKBjmUyVzQ/exec';
+
+function saveToSheets() {
+  const config = buildConfig();
+  if (!validate(config)) return;
+
+  const btn = document.getElementById('btn-sheets');
+  btn.disabled = true;
+  btn.textContent = '⏳ Сохраняю…';
+
+  const payload = {
+    partner:        config.partner,
+    location:       config.location,
+    date:           document.getElementById('date').value,
+    deal_type:      config.deal_type,
+    items:          config.items,
+    comments:       config.comments,
+    extra_parts:    document.getElementById('extra-parts').value.trim(),
+  };
+
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === 'ok') {
+      btn.textContent = '✓ Сохранено!';
+      btn.style.background = '#1E8449';
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '📊 Сохранить в таблицу';
+        btn.style.background = '';
+      }, 3000);
+    } else {
+      alert('Ошибка: ' + (res.message || 'неизвестная ошибка'));
+      btn.disabled = false;
+      btn.textContent = '📊 Сохранить в таблицу';
+    }
+  })
+  .catch(e => {
+    alert('Не удалось подключиться к таблице. Проверь URL скрипта.\n' + e.message);
+    btn.disabled = false;
+    btn.textContent = '📊 Сохранить в таблицу';
+  });
+}
+
+// ── Отправить в Telegram ───────────────────────────────────────────────────
+const TG_TOKEN   = '8636095120:AAEbzoNiu5VAFKXHzIYZThmbn-72hRdpFA0';
+const TG_CHAT_ID = '-4956380144';
+
+function sendToTelegram() {
+  const config = buildConfig();
+  if (!validate(config)) return;
+
+  const btn = document.querySelector('.btn-tg');
+  btn.disabled = true;
+  btn.textContent = 'Отправляю…';
+
+  const dd = buildDocDef(config);
+  pdfMake.createPdf(dd).getBlob(blob => {
+    const slug = partnerSlug(config.partner || 'Партнёр');
+    const filename = `Лист_отгрузки_${slug}_Кашалот.pdf`;
+
+    const form = new FormData();
+    form.append('chat_id', TG_CHAT_ID);
+    form.append('document', blob, filename);
+    form.append('caption', buildCaption(config));
+
+    fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendDocument`, {
+      method: 'POST',
+      body: form,
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.ok) {
+        btn.textContent = '✓ Отправлено!';
+        setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить в чат'; }, 3000);
+      } else {
+        alert('Ошибка Telegram: ' + (res.description || JSON.stringify(res)));
+        btn.disabled = false; btn.textContent = 'Отправить в чат';
+      }
+    })
+    .catch(e => {
+      alert('Ошибка сети: ' + e.message);
+      btn.disabled = false; btn.textContent = 'Отправить в чат';
+    });
+  });
+}
+</script>
+</body>
+</html>

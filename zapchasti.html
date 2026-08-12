@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Лист запчастей · Кашалот</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<style>
+:root {
+  --navy:   #0F2740;
+  --teal:   #1A8C8C;
+  --teal2:  #16a3a3;
+  --amber:  #C8852A;
+  --ink:    #11202E;
+  --muted:  #6B7D8C;
+  --bg:     #F0F4F8;
+  --card:   #FFFFFF;
+  --line:   #DDE5EE;
+  --red:    #C0392B;
+  --green:  #1E8449;
+  --shadow: 0 1px 3px rgba(15,39,64,.06), 0 4px 12px rgba(15,39,64,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --navy:  #9FC6E0; --ink: #DCE8F2; --muted: #8A9DAD;
+    --bg: #0D1620; --card: #152230; --line: #1F3347;
+    --shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.2);
+  }
+}
+:root[data-theme="dark"] { --navy:#9FC6E0;--ink:#DCE8F2;--muted:#8A9DAD;--bg:#0D1620;--card:#152230;--line:#1F3347; }
+:root[data-theme="light"] { --navy:#0F2740;--teal:#1A8C8C;--ink:#11202E;--muted:#6B7D8C;--bg:#F0F4F8;--card:#FFFFFF;--line:#DDE5EE; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+.wrap { max-width: 840px; margin: 0 auto; padding: 36px 20px 80px; }
+
+.page-back { display: inline-flex; align-items: center; gap: 5px; color: var(--teal); text-decoration: none; font-size: 13px; margin-bottom: 22px; }
+.page-back:hover { text-decoration: underline; }
+.page-title { font-size: 26px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.page-sub   { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+.nav-tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+.nav-tab  { padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--muted); background: var(--card); border: 1px solid var(--line); transition: all .15s; }
+.nav-tab.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+.nav-tab:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+
+section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+section h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 700; margin-bottom: 18px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.field input, .field select, .field textarea {
+  padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px;
+  font-size: 14px; background: var(--bg); color: var(--ink);
+  transition: border-color .15s; outline: none; width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--teal); }
+
+.parts-field textarea {
+  width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px;
+  font-size: 14px; background: var(--bg); color: var(--ink);
+  resize: vertical; outline: none; transition: border-color .15s;
+  font-family: inherit; line-height: 1.6;
+}
+.parts-field textarea:focus { border-color: var(--teal); }
+.parts-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.btn-primary { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: filter .15s; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-primary:disabled { opacity: .6; cursor: default; }
+.btn-tg { background: #229ED9; color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: filter .15s; }
+.btn-tg:hover { filter: brightness(1.1); }
+.btn-tg:disabled { opacity: .6; cursor: default; }
+.btn-sheets { background: #1a7a3a; color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s, filter .15s; }
+.btn-sheets:hover { filter: brightness(1.1); }
+.btn-sheets:disabled { opacity: .6; cursor: default; transition: background .5s; }
+
+.error-banner { display: none; background: rgba(192,57,43,.08); border: 1px solid rgba(192,57,43,.2); border-radius: 10px; padding: 14px 16px; margin-top: 12px; }
+.error-banner strong { color: var(--red); font-size: 13px; }
+.error-banner ul { margin: 8px 0 0 18px; font-size: 13px; color: var(--red); }
+.field-error input, .field-error select, .field-error textarea { border-color: var(--red) !important; }
+
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 999; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 620px) {
+  .grid2, .grid3, .fields-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="page-back" href="#">← Все проекты</a>
+
+  <nav class="nav-tabs">
+    <a class="nav-tab" href="kp-generator.html">📦 Лист отгрузки</a>
+    <a class="nav-tab active" href="zapchasti.html">🔧 Лист запчастей</a>
+  </nav>
+
+  <h1 class="page-title">Лист запчастей</h1>
+  <p class="page-sub">Лист запчастей для партнёров АО «Кашалот Шеринг»</p>
+
+  <!-- Основные данные -->
+  <section>
+    <h2>Основные данные</h2>
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="field">
+        <label>Партнёр (ИП / компания)</label>
+        <input id="partner" placeholder="ИП Богатищев Н.Н.">
+      </div>
+      <div class="field">
+        <label>Город / Локация</label>
+        <input id="location" placeholder="Москва, пляж Серебряный бор">
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="field">
+        <label>Потребная дата отправки</label>
+        <input id="date" type="date">
+      </div>
+      <div class="field">
+        <label>Телефон / Ник в Telegram</label>
+        <input id="contact_name" placeholder="+7 900 000 00 00 / @ivan" oninput="formatPhone(this)">
+      </div>
+      <div class="field">
+        <label>Способ отправки</label>
+        <input id="shipping" placeholder="CDEK">
+      </div>
+      <div class="field">
+        <label>Доставка за счёт</label>
+        <select id="delivery_payer">
+          <option value="Партнёра">Партнёра</option>
+          <option value="АО КШ">АО КШ</option>
+          <option value="АО РиП">АО РиП</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Запчасти -->
+  <section>
+    <h2>Запчасти</h2>
+    <div class="parts-field">
+      <textarea id="parts" rows="10" placeholder="Фара 2 шт.&#10;Руль 1 шт.&#10;Тормозная колодка 4 шт.&#10;..."></textarea>
+      <div class="parts-hint">Введите список запчастей — каждая с новой строки</div>
+    </div>
+  </section>
+
+  <!-- Комментарии -->
+  <section>
+    <h2>Комментарии</h2>
+    <div class="field">
+      <textarea id="comments" rows="3" placeholder="Важные детали, пожелания, примечания..."></textarea>
+    </div>
+  </section>
+
+  <!-- Составитель -->
+  <section>
+    <h2>Составитель</h2>
+    <div class="fields-row">
+      <div class="field">
+        <label>Фамилия Имя</label>
+        <input id="compiler_name" placeholder="Иванова Мария">
+      </div>
+      <div class="field">
+        <label>Дата составления</label>
+        <input id="compiler_date" type="date">
+      </div>
+    </div>
+  </section>
+
+  <!-- Генерация -->
+  <section>
+    <h2>Сгенерировать</h2>
+    <div class="actions">
+      <button class="btn-primary" onclick="generatePDF()">Скачать PDF</button>
+<button class="btn-sheets" id="btn-sheets" onclick="saveToSheets()">📊 Сохранить в таблицу</button>
+    </div>
+    <div class="error-banner" id="error-banner">
+      <strong>Заполни обязательные поля перед генерацией:</strong>
+      <ul id="error-list"></ul>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast">Скопировано ✓</div>
+
+<script>
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz6YuKvZG11pJMITLFwjWEhU2VWbdfrR4519qbh5ivHw4ihNyTEzzA4MD9ISKBjmUyVzQ/exec';
+const TG_TOKEN   = '8636095120:AAEbzoNiu5VAFKXHzIYZThmbn-72hRdpFA0';
+const TG_CHAT_ID = '-4956380144';
+
+const MONTHS_FULL_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+window.onload = function() {
+  const now = new Date();
+  document.getElementById('date').value = now.toISOString().slice(0,10);
+  document.getElementById('compiler_date').value = now.toISOString().slice(0,10);
+};
+
+function dateToRu(val) {
+  if (!val) return '';
+  const [y,m,d] = val.split('-');
+  return `${parseInt(d)} ${MONTHS_FULL_GEN[parseInt(m)-1]} ${y}`;
+}
+
+function formatPhone(input) {
+  let v = input.value;
+  if (v.startsWith('@') || v === '') return;
+  let digits = v.replace(/\D/g, '');
+  if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+  if (digits.startsWith('7')) {
+    const d = digits.slice(1);
+    let result = '+7';
+    if (d.length > 0) result += ' ' + d.slice(0,3);
+    if (d.length > 3) result += ' ' + d.slice(3,6);
+    if (d.length > 6) result += ' ' + d.slice(6,8);
+    if (d.length > 8) result += ' ' + d.slice(8,10);
+    input.value = result;
+  }
+}
+
+function partnerSlug(p) { return p.replace(/[^а-яёА-ЯЁa-zA-Z0-9]/g,'_').replace(/_+/g,'_'); }
+
+function buildConfig() {
+  return {
+    partner:       document.getElementById('partner').value.trim(),
+    location:      document.getElementById('location').value.trim(),
+    contact_name:  document.getElementById('contact_name').value.trim(),
+    shipping:      document.getElementById('shipping').value.trim(),
+    delivery_payer:document.getElementById('delivery_payer').value,
+    date:          dateToRu(document.getElementById('date').value),
+    parts:         document.getElementById('parts').value.trim(),
+    compiler_name: document.getElementById('compiler_name').value.trim(),
+    compiler_date: dateToRu(document.getElementById('compiler_date').value),
+  };
+}
+
+function validate(config) {
+  const errors = [];
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+  if (!config.partner) { errors.push('Партнёр'); document.getElementById('partner').closest('.field').classList.add('field-error'); }
+  if (!config.compiler_name) { errors.push('Составитель'); document.getElementById('compiler_name').closest('.field').classList.add('field-error'); }
+  const banner = document.getElementById('error-banner');
+  const list   = document.getElementById('error-list');
+  if (errors.length) {
+    list.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+    banner.style.display = 'block';
+    banner.scrollIntoView({behavior:'smooth', block:'nearest'});
+    return false;
+  }
+  banner.style.display = 'none';
+  return true;
+}
+
+const WH = '#FFFFFF';
+const NV = '#0F2740';
+const TL = '#1A8C8C';
+
+function generatePDF() {
+  const config = buildConfig();
+  if (!validate(config)) return;
+
+  const dd = {
+    pageSize: 'A4',
+    pageMargins: [40, 50, 40, 50],
+    defaultStyle: { font: 'Roboto' },
+    content: [
+      { canvas: [{ type:'rect', x:0, y:0, w:515, h:54, r:6, color: NV }] },
+      { text: 'ЛИСТ ЗАПЧАСТЕЙ', color: WH, bold: true, fontSize: 22, alignment: 'center', margin: [0,-40,0,4] },
+      { text: 'АО «Кашалот Шеринг»', color: TL, fontSize: 11, alignment: 'center', margin: [0,0,0,20] },
+
+      {
+        columns: [
+          [
+            { text: 'Партнёр', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.partner, bold: true, fontSize: 13, margin: [0,0,0,10] },
+            { text: 'Город / Локация', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.location || '—', fontSize: 12, margin: [0,0,0,10] },
+          ],
+          [
+            { text: 'Дата отправки', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.date || '—', fontSize: 12, margin: [0,0,0,10] },
+            { text: 'Контакт', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.contact_name || '—', fontSize: 12, margin: [0,0,0,10] },
+          ],
+        ],
+        margin: [0,0,0,16],
+      },
+
+      { canvas: [{ type:'line', x1:0, y1:0, x2:515, y2:0, lineWidth:1, lineColor:'#DDE5EE' }], margin:[0,0,0,16] },
+
+      { text: 'ЗАПЧАСТИ', fontSize: 10, bold: true, color: NV, margin: [0,0,0,10], letterSpacing: 1 },
+      { text: config.parts || '—', fontSize: 12, lineHeight: 1.6, margin: [0,0,0,20] },
+
+      ...(config.compiler_name ? [
+        { canvas: [{ type:'line', x1:0, y1:0, x2:515, y2:0, lineWidth:1, lineColor:'#DDE5EE' }], margin:[0,0,0,12] },
+        {
+          columns: [
+            { text: `Составитель: ${config.compiler_name}`, fontSize: 11, color: '#555' },
+            { text: config.compiler_date || '', fontSize: 11, color: '#555', alignment: 'right' },
+          ],
+        },
+      ] : []),
+    ],
+  };
+
+  const slug = partnerSlug(config.partner || 'Партнёр');
+  pdfMake.createPdf(dd).download(`Лист_запчастей_${slug}_Кашалот.pdf`);
+}
+
+function sendToTelegram() {
+  const config = buildConfig();
+  if (!validate(config)) return;
+
+  const btn = document.getElementById('btn-tg');
+  btn.disabled = true;
+  btn.textContent = 'Отправляю…';
+
+  const caption = [
+    '🔧 Лист запчастей',
+    '',
+    `Партнёр: ${config.partner}`,
+    config.location ? `Город: ${config.location}` : '',
+    config.date ? `Дата: ${config.date}` : '',
+    '',
+    config.parts || '',
+  ].filter(l => l !== undefined).join('\n');
+
+  const dd = buildPDFDef(config);
+  pdfMake.createPdf(buildPDFDef(config)).getBlob(blob => {
+    const slug = partnerSlug(config.partner || 'Партнёр');
+    const form = new FormData();
+    form.append('chat_id', TG_CHAT_ID);
+    form.append('document', blob, `Лист_запчастей_${slug}_Кашалот.pdf`);
+    form.append('caption', caption);
+
+    fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendDocument`, { method:'POST', body:form })
+      .then(r => r.json())
+      .then(res => {
+        if (res.ok) {
+          btn.textContent = '✓ Отправлено!';
+          setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить в чат'; }, 3000);
+        } else {
+          alert('Ошибка Telegram: ' + (res.description || JSON.stringify(res)));
+          btn.disabled = false; btn.textContent = 'Отправить в чат';
+        }
+      })
+      .catch(e => { alert('Ошибка сети: ' + e.message); btn.disabled = false; btn.textContent = 'Отправить в чат'; });
+  });
+}
+
+function buildPDFDef(config) {
+  return {
+    pageSize: 'A4', pageMargins: [40,50,40,50],
+    defaultStyle: { font: 'Roboto' },
+    content: [
+      { canvas: [{ type:'rect', x:0, y:0, w:515, h:54, r:6, color: NV }] },
+      { text: 'ЛИСТ ЗАПЧАСТЕЙ', color: WH, bold: true, fontSize: 22, alignment: 'center', margin: [0,-40,0,4] },
+      { text: 'АО «Кашалот Шеринг»', color: TL, fontSize: 11, alignment: 'center', margin: [0,0,0,20] },
+      {
+        columns: [
+          [
+            { text: 'Партнёр', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.partner, bold: true, fontSize: 13, margin: [0,0,0,10] },
+            { text: 'Город / Локация', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.location || '—', fontSize: 12, margin: [0,0,0,10] },
+          ],
+          [
+            { text: 'Дата отправки', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.date || '—', fontSize: 12, margin: [0,0,0,10] },
+            { text: 'Контакт', fontSize: 9, color: '#888', margin: [0,0,0,2] },
+            { text: config.contact_name || '—', fontSize: 12, margin: [0,0,0,10] },
+          ],
+        ],
+        margin: [0,0,0,16],
+      },
+      { canvas: [{ type:'line', x1:0, y1:0, x2:515, y2:0, lineWidth:1, lineColor:'#DDE5EE' }], margin:[0,0,0,16] },
+      { text: 'ЗАПЧАСТИ', fontSize: 10, bold: true, color: NV, margin: [0,0,0,10] },
+      { text: config.parts || '—', fontSize: 12, lineHeight: 1.6, margin: [0,0,0,20] },
+      ...(config.compiler_name ? [
+        { canvas: [{ type:'line', x1:0, y1:0, x2:515, y2:0, lineWidth:1, lineColor:'#DDE5EE' }], margin:[0,0,0,12] },
+        { columns: [
+          { text: `Составитель: ${config.compiler_name}`, fontSize: 11, color: '#555' },
+          { text: config.compiler_date || '', fontSize: 11, color: '#555', alignment: 'right' },
+        ]},
+      ] : []),
+    ],
+  };
+}
+
+function saveToSheets() {
+  const config = buildConfig();
+  if (!validate(config)) return;
+
+  const btn = document.getElementById('btn-sheets');
+  btn.disabled = true;
+  btn.textContent = '⏳ Сохраняю…';
+
+  const payload = {
+    type:          'zapchasti',
+    partner:       config.partner,
+    location:      config.location,
+    date:          document.getElementById('date').value,
+    contact_name:  config.contact_name,
+    parts:         config.parts,
+    comments:      document.getElementById('comments').value.trim(),
+    compiler_name: config.compiler_name,
+    compiler_date: config.compiler_date,
+  };
+
+  fetch(SHEETS_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'ok') {
+        btn.textContent = '✓ Сохранено!';
+        btn.style.background = '#1E8449';
+        setTimeout(() => { btn.disabled = false; btn.textContent = '📊 Сохранить в таблицу'; btn.style.background = ''; }, 3000);
+      } else {
+        alert('Ошибка: ' + (res.message || 'неизвестная ошибка'));
+        btn.disabled = false; btn.textContent = '📊 Сохранить в таблицу';
+      }
+    })
+    .catch(e => { alert('Ошибка сети: ' + e.message); btn.disabled = false; btn.textContent = '📊 Сохранить в таблицу'; });
+}
+</script>
+</body>
+</html>
