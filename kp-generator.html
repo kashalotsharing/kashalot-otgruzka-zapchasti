@@ -1267,60 +1267,27 @@ function openDogovor() {
 // ── Подпись для Telegram ──────────────────────────────────────────────────
 function buildCaption(config) {
   const items = config.items || [];
-  const snegs     = items.filter(it => it.name.startsWith('Кашалот'));
-  const akbItems  = items.filter(it => it.name.startsWith('АКБ'));
-  const zuItems   = items.filter(it => it.category === 'ЗУ');
-  const hasZap    = items.some(it => it.category === 'запчасти' || it.category === 'доп. запчасти');
-  const hasMod    = items.some(it => it.category === 'модули');
+  const snegs    = items.filter(it => it.name.startsWith('Кашалот'));
+  const akbItems = items.filter(it => it.name.startsWith('АКБ'));
+  const zuItems  = items.filter(it => it.category === 'ЗУ');
 
-  const snegTypes = [
-    { key: 'региональный', label: 'Кашалот региональный б/у' },
-    { key: 'восстановленный', label: 'Кашалот восстановленный' },
-    { key: '2026',         label: 'Кашалот новый 2026' },
-    { key: 'NEW',          label: 'Кашалот NEW 2027' },
-  ];
-  const akbTotal = akbItems.reduce((s, it) => s + it.qty, 0);
-  const zuTotal  = zuItems.reduce((s, it) => s + it.qty, 0);
+  const kshUsed = snegs.filter(it => it.category === 'б/у').reduce((s, it) => s + it.qty, 0);
+  const kshNew  = snegs.filter(it => it.category !== 'б/у').reduce((s, it) => s + it.qty, 0);
+  const zuTotal = zuItems.reduce((s, it) => s + it.qty, 0);
+  const akbUsed = akbItems.filter(it => it.name.includes('б/у')).reduce((s, it) => s + it.qty, 0);
+  const akbNew  = akbItems.filter(it => !it.name.includes('б/у')).reduce((s, it) => s + it.qty, 0);
 
-  const snegsTotal = snegs.reduce((s, it) => s + it.qty, 0);
-
-  const lines = ['📦 Лист отгрузки', ''];
+  const lines = ['📦 Лист отгрузки', '', '@darktuba @natali_em_em', ''];
   lines.push(`Партнёр: ${config.partner}`);
   if (config.location) lines.push(`Город: ${config.location}`);
   if (config.date)     lines.push(`Дата отправки: ${config.date}`);
   lines.push('');
 
-  if (snegsTotal > 0) {
-    lines.push(`Всего кашалотов: ${snegsTotal}`);
-    const modLabel = {'Зимний':'на зимнем модуле','Летний':'на летнем модуле','Пляжный':'на пляжном модуле'};
-    const getSnegLabel = it => {
-      const t = snegTypes.find(({key}) => it.name.includes(key));
-      return t ? t.label : it.name.replace(/\s*\(.*\)/,'').trim();
-    };
-    const getModule = it => Object.keys(modLabel).find(k => it.name.includes(k + ' модуль')) || '';
-    const uniqueMods = [...new Set(snegs.map(getModule))];
-    if (uniqueMods.length === 1 && uniqueMods[0]) {
-      lines.push(`На ${modLabel[uniqueMods[0]].replace('на ','')}`);
-      lines.push('');
-      snegTypes.forEach(({key, label}) => {
-        const total = snegs.filter(it => it.name.includes(key)).reduce((s, it) => s + it.qty, 0);
-        if (total > 0) lines.push(`${label}: ${total}`);
-      });
-    } else {
-      lines.push('');
-      snegs.forEach(it => {
-        const mod = getModule(it);
-        lines.push(`${getSnegLabel(it)}: ${it.qty}${mod ? ' ' + modLabel[mod] : ''}`);
-      });
-    }
-    lines.push('');
-  }
-
-  if (akbTotal > 0) lines.push(`АКБ: ${akbTotal}`);
-  if (zuTotal  > 0) lines.push(`ЗУ: ${zuTotal}`);
-  lines.push('');
-  lines.push(hasZap ? '+запчасти' : 'нет запчастей');
-  lines.push(hasMod ? '+модули'   : 'нет модулей');
+  if (kshNew)  lines.push(`${kshNew} КШ новые`);
+  if (kshUsed) lines.push(`${kshUsed} КШ БУ`);
+  if (zuTotal) lines.push(`${zuTotal} ЗУ`);
+  if (akbNew)  lines.push(`${akbNew} АКБ новые`);
+  if (akbUsed) lines.push(`${akbUsed} АКБ БУ`);
 
   return lines.join('\n');
 }
