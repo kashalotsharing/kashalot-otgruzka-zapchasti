@@ -491,6 +491,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Каток</div>
               <select class="opt-select sneg-katok">
+                <option value=""></option>
                 <option>Хард</option>
                 <option>Софт</option>
                 <option>Гладкая резина</option>
@@ -512,6 +513,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Модуль</div>
               <select class="opt-select sneg-module">
+                <option value=""></option>
                 <option>Зимний</option>
                 <option>Летний</option>
                 <option>Пляжный</option>
@@ -520,6 +522,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Резина</div>
               <select class="opt-select sneg-rubber">
+                <option value=""></option>
                 <option>положить хард резину</option>
                 <option>положить софт резину</option>
                 <option>положить гладкую резину</option>
@@ -535,6 +538,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Каток</div>
               <select class="opt-select sneg-katok">
+                <option value=""></option>
                 <option>Хард</option>
                 <option>Софт</option>
                 <option>Гладкая резина</option>
@@ -556,6 +560,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Модуль</div>
               <select class="opt-select sneg-module">
+                <option value=""></option>
                 <option>Зимний</option>
                 <option>Летний</option>
                 <option>Пляжный</option>
@@ -564,6 +569,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Резина</div>
               <select class="opt-select sneg-rubber">
+                <option value=""></option>
                 <option>положить хард резину</option>
                 <option>положить софт резину</option>
                 <option>положить гладкую резину</option>
@@ -579,6 +585,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Каток</div>
               <select class="opt-select sneg-katok">
+                <option value=""></option>
                 <option>Хард</option>
                 <option>Софт</option>
                 <option>Гладкая резина</option>
@@ -600,6 +607,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Модуль</div>
               <select class="opt-select sneg-module">
+                <option value=""></option>
                 <option>Зимний</option>
                 <option>Летний</option>
                 <option>Пляжный</option>
@@ -608,6 +616,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Резина</div>
               <select class="opt-select sneg-rubber">
+                <option value=""></option>
                 <option>положить хард резину</option>
                 <option>положить софт резину</option>
                 <option>положить гладкую резину</option>
@@ -623,6 +632,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Каток</div>
               <select class="opt-select sneg-katok">
+                <option value=""></option>
                 <option>Хард</option>
                 <option>Софт</option>
                 <option>Гладкая резина</option>
@@ -644,6 +654,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Модуль</div>
               <select class="opt-select sneg-module">
+                <option value=""></option>
                 <option>Зимний</option>
                 <option>Летний</option>
                 <option>Пляжный</option>
@@ -652,6 +663,7 @@ textarea { resize: vertical; font-family: inherit; font-size: 15px; }
             <div>
               <div class="sneg-opt-label">Резина</div>
               <select class="opt-select sneg-rubber">
+                <option value=""></option>
                 <option>положить хард резину</option>
                 <option>положить софт резину</option>
                 <option>положить гладкую резину</option>
@@ -904,12 +916,12 @@ function addSneg(btn, name, cat) {
   const katok  = card.querySelector('.sneg-katok')?.value || '';
   const color  = card.querySelector('.sneg-color')?.value || '';
   const module = card.querySelector('.sneg-module')?.value || '';
-  const rubber = card.querySelector('.sneg-rubber')?.value || 'Нет';
+  const rubber = card.querySelector('.sneg-rubber')?.value || '';
   const parts  = [
     katok  ? katok + ' каток' : '',
     color  || '',
     module ? module + ' модуль' : '',
-    rubber === 'Да' ? 'гладкая резина' : '',
+    rubber,
   ].filter(Boolean).join(', ');
   addFromCatalog(`${name} (${parts})`, cat);
 }
